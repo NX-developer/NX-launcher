@@ -8,6 +8,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Monitor
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -60,9 +63,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.nxlauncher.data.Constants
+import com.nxlauncher.data.DeviceInfo
+import com.nxlauncher.data.JavaRuntimes
 import com.nxlauncher.ui.components.FilterChip
 import com.nxlauncher.ui.theme.NXGreen
 import com.nxlauncher.ui.theme.NXGreenDark
+import com.nxlauncher.ui.theme.NXError
 import com.nxlauncher.ui.theme.NXOutline
 import com.nxlauncher.ui.theme.NXSurface
 import com.nxlauncher.ui.theme.NXSurfaceVariant
@@ -94,7 +100,7 @@ fun SettingsScreen() {
     var resolution by remember { mutableIntStateOf(100) }
     var ram by remember { mutableIntStateOf(2048) }
     var renderer by remember { mutableStateOf("Zink") }
-    var runtime by remember { mutableStateOf("Java 17") }
+    var runtime by remember { mutableStateOf("Auto") }
     var gameLanguage by remember { mutableStateOf("English") }
     var jvmArgs by remember { mutableStateOf("") }
     var touchControls by remember { mutableStateOf(true) }
@@ -108,6 +114,7 @@ fun SettingsScreen() {
     var showJvmDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val deviceStats = remember { DeviceInfo.read(context) }
 
     Column(
         modifier = Modifier
@@ -145,6 +152,7 @@ fun SettingsScreen() {
                 onChange = { ram = (it / 256).roundToInt() * 256 },
                 onValueClick = { showRamDialog = true }
             )
+            MemoryInfoBlock(allocatedMb = ram, stats = deviceStats)
             DividerLine()
             ChipSetting(
                 title = "Renderer",
@@ -158,10 +166,18 @@ fun SettingsScreen() {
         SettingsGroup(icon = Icons.Filled.Memory, title = "Runtime") {
             ChipSetting(
                 title = "Java runtime",
-                options = listOf("Java 8", "Java 17", "Java 21", "Java 25"),
+                options = listOf("Auto") + JavaRuntimes.ordered,
                 selected = runtime,
                 onSelect = { runtime = it }
             )
+            if (runtime == "Auto") {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Tries the runtimes and uses the one that matches each Minecraft version",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = NXTextSecondary
+                )
+            }
             DividerLine()
             ActionRow(
                 title = "Custom JVM arguments",
@@ -316,15 +332,70 @@ private fun SliderSetting(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ChipSetting(title: String, options: List<String>, selected: String, onSelect: (String) -> Unit) {
     Column {
         Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
         Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             options.forEach { option ->
                 FilterChip(option, option == selected) { onSelect(option) }
             }
+        }
+    }
+}
+
+@Composable
+private fun MemoryInfoBlock(allocatedMb: Int, stats: com.nxlauncher.data.DeviceStats) {
+    val exceeds = allocatedMb > stats.availableRamMb
+    Spacer(Modifier.height(10.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(NXSurfaceVariant)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column {
+            Text("Available RAM", style = MaterialTheme.typography.labelSmall, color = NXTextMuted)
+            Text(
+                stats.availableRamMb.toString() + " / " + stats.totalRamMb + " MB",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text("Free storage", style = MaterialTheme.typography.labelSmall, color = NXTextMuted)
+            Text(
+                stats.freeStorageReadable(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+    }
+    if (exceeds) {
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(NXError.copy(alpha = 0.12f))
+                .border(1.dp, NXError.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Warning, contentDescription = null, tint = NXError, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = "Allocated memory is higher than the available RAM on this device",
+                style = MaterialTheme.typography.bodyMedium,
+                color = NXError
+            )
         }
     }
 }

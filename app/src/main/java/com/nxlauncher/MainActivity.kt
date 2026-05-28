@@ -33,6 +33,7 @@ import com.nxlauncher.data.repository.MojangRepository
 import com.nxlauncher.navigation.NavRoute
 import com.nxlauncher.navigation.bottomNavItems
 import com.nxlauncher.ui.screens.HomeScreen
+import com.nxlauncher.ui.screens.LaunchScreen
 import com.nxlauncher.ui.screens.ModDetailScreen
 import com.nxlauncher.ui.screens.ModsScreen
 import com.nxlauncher.ui.screens.SettingsScreen
@@ -100,7 +101,8 @@ private fun NXApp() {
                     HomeScreen(
                         selectedVersion = latestVersion,
                         onVersionClick = { navController.navigate(NavRoute.Versions.route) },
-                        onSettingsClick = { navController.navigate(NavRoute.Settings.route) }
+                        onSettingsClick = { navController.navigate(NavRoute.Settings.route) },
+                        onPlay = { navController.navigate(NavRoute.Launch.create(latestVersion)) }
                     )
                 }
                 composable(NavRoute.Versions.route) {
@@ -115,6 +117,16 @@ private fun NXApp() {
                 }
                 composable(NavRoute.Settings.route) {
                     SettingsScreen()
+                }
+                composable(
+                    route = NavRoute.Launch.route,
+                    arguments = listOf(navArgument("version") { type = NavType.StringType })
+                ) { entry ->
+                    val version = entry.arguments?.getString("version").orEmpty()
+                    LaunchScreen(
+                        version = version,
+                        onBack = { navController.popBackStack() }
+                    )
                 }
                 composable(
                     route = NavRoute.ModDetail.route,

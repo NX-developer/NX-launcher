@@ -12,6 +12,9 @@ sealed class NavRoute(val route: String) {
     data object Versions : NavRoute("versions")
     data object Mods : NavRoute("mods")
     data object Settings : NavRoute("settings")
+    data object Launch : NavRoute("launch/{version}") {
+        fun create(version: String) = "launch/$version"
+    }
     data object ModDetail : NavRoute("mod_detail/{source}/{modId}") {
         fun create(source: String, modId: String) = "mod_detail/$source/$modId"
     }

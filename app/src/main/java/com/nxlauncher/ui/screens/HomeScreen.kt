@@ -49,7 +49,8 @@ import com.nxlauncher.ui.theme.NXTextSecondary
 fun HomeScreen(
     selectedVersion: String,
     onVersionClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onPlay: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -124,7 +125,8 @@ fun HomeScreen(
                 )
 
                 PlayButton(
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    onClick = onPlay
                 )
             }
         }
@@ -284,7 +286,7 @@ private fun VersionSelector(
 }
 
 @Composable
-private fun PlayButton(modifier: Modifier = Modifier) {
+private fun PlayButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -295,7 +297,7 @@ private fun PlayButton(modifier: Modifier = Modifier) {
                     colors = listOf(NXGreenDark, NXGreen)
                 )
             )
-            .clickable { },
+            .clickable { onClick() },
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
