@@ -83,10 +83,10 @@ fun ModsScreen(onModClick: (ModSource, String) -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
 
-        SourceToggle(source = vm.source, onSelect = { vm.setSource(it) })
+        SourceToggle(source = vm.source, onSelect = { vm.selectSource(it) })
         Spacer(Modifier.height(12.dp))
 
-        SearchField(query = vm.query, onChange = { vm.setQuery(it) })
+        SearchField(query = vm.query, onChange = { vm.updateQuery(it) })
         Spacer(Modifier.height(12.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -94,12 +94,12 @@ fun ModsScreen(onModClick: (ModSource, String) -> Unit) {
                 modifier = Modifier.weight(1f),
                 options = vm.versionOptions,
                 selected = vm.version,
-                onSelect = { vm.setVersion(it) }
+                onSelect = { vm.selectVersion(it) }
             )
             LoaderDropdown(
                 modifier = Modifier.weight(1f),
                 selected = vm.loader,
-                onSelect = { vm.setLoader(it) }
+                onSelect = { vm.selectLoader(it) }
             )
         }
 

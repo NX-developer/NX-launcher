@@ -61,14 +61,14 @@ class ModsViewModel : ViewModel() {
         }
     }
 
-    fun setSource(value: ModSource) {
+    fun selectSource(value: ModSource) {
         if (value == source) return
         source = value
         page = 0
         search()
     }
 
-    fun setQuery(value: String) {
+    fun updateQuery(value: String) {
         query = value
         page = 0
         searchJob?.cancel()
@@ -78,13 +78,13 @@ class ModsViewModel : ViewModel() {
         }
     }
 
-    fun setVersion(value: String?) {
+    fun selectVersion(value: String?) {
         version = value
         page = 0
         search()
     }
 
-    fun setLoader(value: ModLoader?) {
+    fun selectLoader(value: ModLoader?) {
         loader = value
         page = 0
         search()
