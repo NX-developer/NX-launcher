@@ -9,14 +9,15 @@ enum class ModSource(val label: String, val accent: Color) {
     CURSEFORGE("CurseForge", NXCurseForge)
 }
 
-enum class ModLoader(val label: String) {
-    FABRIC("Fabric"),
-    FORGE("Forge"),
-    QUILT("Quilt"),
-    NEOFORGE("NeoForge")
+enum class ModLoader(val label: String, val apiName: String) {
+    FABRIC("Fabric", "fabric"),
+    FORGE("Forge", "forge"),
+    QUILT("Quilt", "quilt"),
+    NEOFORGE("NeoForge", "neoforge")
 }
 
 enum class VersionType(val label: String) {
     RELEASE("Release"),
-    SNAPSHOT("Snapshot")
+    SNAPSHOT("Snapshot"),
+    OLD("Old")
 }

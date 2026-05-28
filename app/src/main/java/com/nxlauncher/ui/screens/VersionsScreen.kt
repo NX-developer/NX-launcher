@@ -19,9 +19,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Widgets
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,24 +36,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.nxlauncher.data.model.GameVersion
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.nxlauncher.data.model.MinecraftVersion
 import com.nxlauncher.data.model.VersionType
-import com.nxlauncher.data.sample.SampleData
 import com.nxlauncher.ui.components.FilterChip
 import com.nxlauncher.ui.components.TagPill
+import com.nxlauncher.ui.components.formatReleaseTime
+import com.nxlauncher.ui.theme.NXAmber
 import com.nxlauncher.ui.theme.NXGreen
 import com.nxlauncher.ui.theme.NXOutline
 import com.nxlauncher.ui.theme.NXSurface
 import com.nxlauncher.ui.theme.NXSurfaceVariant
 import com.nxlauncher.ui.theme.NXTextMuted
 import com.nxlauncher.ui.theme.NXTextSecondary
+import com.nxlauncher.ui.vm.VersionsViewModel
 
 @Composable
 fun VersionsScreen() {
-    var typeFilter by remember { mutableStateOf<VersionType?>(null) }
+    val vm: VersionsViewModel = viewModel()
+    var typeFilter by remember { mutableStateOf<VersionType?>(VersionType.RELEASE) }
 
-    val filtered = remember(typeFilter) {
-        SampleData.versions.filter { typeFilter == null || it.type == typeFilter }
+    val latestRelease = remember(vm.versions) {
+        vm.versions.firstOrNull { it.type == VersionType.RELEASE }?.id
+    }
+    val filtered = remember(vm.versions, typeFilter) {
+        vm.versions.filter { typeFilter == null || it.type == typeFilter }
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
@@ -64,7 +72,7 @@ fun VersionsScreen() {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Choose a Minecraft version to install",
+            text = if (vm.loading) "Loading from Mojang..." else filtered.size.toString() + " versions available",
             style = MaterialTheme.typography.bodyMedium,
             color = NXTextSecondary
         )
@@ -78,19 +86,29 @@ fun VersionsScreen() {
 
         Spacer(Modifier.height(16.dp))
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
-        ) {
-            items(filtered) { version ->
-                VersionRow(version)
+        when {
+            vm.loading -> CenterState { CircularProgressIndicator(color = NXGreen) }
+            vm.error != null -> CenterState {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(vm.error.orEmpty(), color = NXTextMuted, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(12.dp))
+                    RetryButton { vm.load() }
+                }
+            }
+            else -> LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
+            ) {
+                items(filtered, key = { it.id }) { version ->
+                    VersionRow(version, isLatest = version.id == latestRelease)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun VersionRow(version: GameVersion) {
+private fun VersionRow(version: MinecraftVersion, isLatest: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -118,38 +136,51 @@ private fun VersionRow(version: GameVersion) {
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(Modifier.width(8.dp))
-                TagPill(version.type.label, if (version.type == VersionType.RELEASE) NXGreen else NXTextMuted)
+                if (isLatest) {
+                    TagPill("Latest", NXAmber)
+                } else {
+                    TagPill(version.type.label, if (version.type == VersionType.RELEASE) NXGreen else NXTextMuted)
+                }
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                text = version.releaseDate + "  •  " + version.availableLoaders.joinToString(", ") { it.label },
+                text = formatReleaseTime(version.releaseTimeIso),
                 style = MaterialTheme.typography.labelSmall,
                 color = NXTextSecondary
             )
         }
         Spacer(Modifier.width(10.dp))
-        if (version.installed) {
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(NXGreen.copy(alpha = 0.16f))
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Filled.Check, contentDescription = null, tint = NXGreen, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Installed", style = MaterialTheme.typography.labelSmall, color = NXGreen, fontWeight = FontWeight.Bold)
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(NXSurfaceVariant)
-                    .clickable { }
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                Icon(Icons.Filled.Download, contentDescription = null, tint = NXTextSecondary, modifier = Modifier.size(18.dp))
-            }
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(NXSurfaceVariant)
+                .clickable { }
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Icon(Icons.Filled.Download, contentDescription = null, tint = NXTextSecondary, modifier = Modifier.size(18.dp))
         }
+    }
+}
+
+@Composable
+private fun CenterState(content: @Composable () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        content()
+    }
+}
+
+@Composable
+private fun RetryButton(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(NXGreen.copy(alpha = 0.16f))
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Filled.Refresh, contentDescription = null, tint = NXGreen, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(8.dp))
+        Text("Retry", color = NXGreen, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
     }
 }

@@ -36,7 +36,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.nxlauncher.data.sample.SampleData
 import com.nxlauncher.ui.theme.NXBackgroundElevated
 import com.nxlauncher.ui.theme.NXGreen
 import com.nxlauncher.ui.theme.NXGreenDark
@@ -52,7 +51,6 @@ fun HomeScreen(
     onVersionClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
-    val account = SampleData.account
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -79,7 +77,7 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold
                 )
             }
-            AccountChip(username = account.username, online = account.online)
+            AccountChip(username = "Steve", online = false)
         }
 
         Spacer(Modifier.height(28.dp))

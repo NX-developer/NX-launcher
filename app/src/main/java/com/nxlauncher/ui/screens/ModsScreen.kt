@@ -20,14 +20,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FirstPage
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LastPage
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -45,50 +47,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.nxlauncher.data.model.ModItem
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.nxlauncher.data.model.ModLoader
 import com.nxlauncher.data.model.ModSource
-import com.nxlauncher.data.sample.SampleData
+import com.nxlauncher.data.model.ModSummary
 import com.nxlauncher.ui.components.TagPill
 import com.nxlauncher.ui.components.formatDownloads
-import com.nxlauncher.ui.theme.NXBackground
 import com.nxlauncher.ui.theme.NXGreen
 import com.nxlauncher.ui.theme.NXOutline
 import com.nxlauncher.ui.theme.NXSurface
 import com.nxlauncher.ui.theme.NXSurfaceVariant
 import com.nxlauncher.ui.theme.NXTextMuted
 import com.nxlauncher.ui.theme.NXTextSecondary
-
-private const val PAGE_SIZE = 6
+import com.nxlauncher.ui.vm.ModsViewModel
 
 @Composable
-fun ModsScreen(onModClick: (String) -> Unit) {
-    var source by remember { mutableStateOf(ModSource.MODRINTH) }
-    var query by remember { mutableStateOf("") }
-    var versionFilter by remember { mutableStateOf<String?>(null) }
-    var loaderFilter by remember { mutableStateOf<ModLoader?>(null) }
-    var page by remember { mutableStateOf(0) }
+fun ModsScreen(onModClick: (ModSource, String) -> Unit) {
+    val vm: ModsViewModel = viewModel()
     val listState = rememberLazyListState()
 
-    val filtered = remember(source, query, versionFilter, loaderFilter) {
-        SampleData.mods.filter { mod ->
-            mod.source == source &&
-                (query.isBlank() || mod.name.contains(query, true) || mod.author.contains(query, true)) &&
-                (versionFilter == null || mod.supportedVersions.contains(versionFilter)) &&
-                (loaderFilter == null || mod.supportedLoaders.contains(loaderFilter))
-        }
-    }
-
-    val pageCount = if (filtered.isEmpty()) 1 else (filtered.size + PAGE_SIZE - 1) / PAGE_SIZE
-    val safePage = page.coerceIn(0, pageCount - 1)
-    val pageItems = filtered.drop(safePage * PAGE_SIZE).take(PAGE_SIZE)
-
-    LaunchedEffect(source, query, versionFilter, loaderFilter) {
-        page = 0
-    }
-    LaunchedEffect(safePage) {
+    LaunchedEffect(vm.page, vm.source) {
         listState.scrollToItem(0)
     }
 
@@ -101,22 +83,23 @@ fun ModsScreen(onModClick: (String) -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
 
-        SourceToggle(source = source, onSelect = { source = it })
+        SourceToggle(source = vm.source, onSelect = { vm.setSource(it) })
         Spacer(Modifier.height(12.dp))
 
-        SearchField(query = query, onChange = { query = it })
+        SearchField(query = vm.query, onChange = { vm.setQuery(it) })
         Spacer(Modifier.height(12.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             VersionDropdown(
                 modifier = Modifier.weight(1f),
-                selected = versionFilter,
-                onSelect = { versionFilter = it }
+                options = vm.versionOptions,
+                selected = vm.version,
+                onSelect = { vm.setVersion(it) }
             )
             LoaderDropdown(
                 modifier = Modifier.weight(1f),
-                selected = loaderFilter,
-                onSelect = { loaderFilter = it }
+                selected = vm.loader,
+                onSelect = { vm.setLoader(it) }
             )
         }
 
@@ -128,12 +111,12 @@ fun ModsScreen(onModClick: (String) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = filtered.size.toString() + " results",
+                text = if (vm.loading) "Searching..." else vm.totalHits.toString() + " results",
                 style = MaterialTheme.typography.labelSmall,
                 color = NXTextMuted
             )
             Text(
-                text = "Page " + (safePage + 1) + " / " + pageCount,
+                text = "Page " + (vm.page + 1) + " / " + vm.pageCount,
                 style = MaterialTheme.typography.labelSmall,
                 color = NXTextMuted
             )
@@ -141,37 +124,37 @@ fun ModsScreen(onModClick: (String) -> Unit) {
 
         Spacer(Modifier.height(10.dp))
 
-        if (pageItems.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxWidth().weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            when {
+                vm.loading -> CircularProgressIndicator(color = NXGreen)
+                vm.keyMissing -> KeyMissingState()
+                vm.error != null -> ErrorState(message = vm.error.orEmpty(), onRetry = { vm.search() })
+                vm.items.isEmpty() -> Text(
                     text = "No mods match your filters",
                     style = MaterialTheme.typography.bodyMedium,
                     color = NXTextMuted
                 )
-            }
-        } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(bottom = 12.dp)
-            ) {
-                items(pageItems, key = { it.id }) { mod ->
-                    ModCard(mod = mod, onClick = { onModClick(mod.id) })
+                else -> LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(top = 2.dp, bottom = 12.dp)
+                ) {
+                    items(vm.items, key = { it.source.name + it.id }) { mod ->
+                        ModCard(mod = mod, onClick = { onModClick(mod.source, mod.id) })
+                    }
                 }
             }
         }
 
         PaginationBar(
-            page = safePage,
-            pageCount = pageCount,
-            onFirst = { page = 0 },
-            onPrev = { page = (safePage - 1).coerceAtLeast(0) },
-            onNext = { page = (safePage + 1).coerceAtMost(pageCount - 1) },
-            onLast = { page = pageCount - 1 }
+            page = vm.page,
+            pageCount = vm.pageCount,
+            enabled = !vm.loading,
+            onFirst = { vm.firstPage() },
+            onPrev = { vm.prevPage() },
+            onNext = { vm.nextPage() },
+            onLast = { vm.lastPage() }
         )
         Spacer(Modifier.height(14.dp))
     }
@@ -244,26 +227,25 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
 @Composable
 private fun VersionDropdown(
     modifier: Modifier = Modifier,
+    options: List<String>,
     selected: String?,
     onSelect: (String?) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
-        DropdownTrigger(
-            label = "Version",
-            value = selected ?: "All",
-            onClick = { expanded = true }
-        )
+        DropdownTrigger(label = "Version", value = selected ?: "All", onClick = { expanded = true })
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.background(NXSurfaceVariant)
+            modifier = Modifier
+                .background(NXSurfaceVariant)
+                .height(360.dp)
         ) {
             DropdownMenuItem(
                 text = { Text("All versions", color = NXTextSecondary) },
                 onClick = { onSelect(null); expanded = false }
             )
-            SampleData.allVersionStrings.forEach { v ->
+            options.forEach { v ->
                 DropdownMenuItem(
                     text = { Text(v, color = MaterialTheme.colorScheme.onBackground) },
                     onClick = { onSelect(v); expanded = false }
@@ -281,11 +263,7 @@ private fun LoaderDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
-        DropdownTrigger(
-            label = "Loader",
-            value = selected?.label ?: "All",
-            onClick = { expanded = true }
-        )
+        DropdownTrigger(label = "Loader", value = selected?.label ?: "All", onClick = { expanded = true })
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
@@ -326,7 +304,7 @@ private fun DropdownTrigger(label: String, value: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ModCard(mod: ModItem, onClick: () -> Unit) {
+private fun ModCard(mod: ModSummary, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -336,20 +314,7 @@ private fun ModCard(mod: ModItem, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(14.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(mod.iconColor)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = mod.name.take(1).uppercase(),
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White,
-                fontWeight = FontWeight.Black
-            )
-        }
+        ModIcon(iconUrl = mod.iconUrl, name = mod.name, size = 52)
         Spacer(Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -367,11 +332,13 @@ private fun ModCard(mod: ModItem, onClick: () -> Unit) {
                         .background(mod.source.accent)
                 )
             }
-            Text(
-                text = "by " + mod.author,
-                style = MaterialTheme.typography.labelSmall,
-                color = NXTextMuted
-            )
+            if (mod.author.isNotBlank()) {
+                Text(
+                    text = "by " + mod.author,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = NXTextMuted
+                )
+            }
             Spacer(Modifier.height(6.dp))
             Text(
                 text = mod.description,
@@ -398,9 +365,79 @@ private fun ModCard(mod: ModItem, onClick: () -> Unit) {
 }
 
 @Composable
+private fun ModIcon(iconUrl: String?, name: String, size: Int) {
+    Box(
+        modifier = Modifier
+            .size(size.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(NXSurfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        if (iconUrl != null) {
+            AsyncImage(
+                model = iconUrl,
+                contentDescription = name,
+                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Text(
+                text = name.take(1).uppercase(),
+                style = MaterialTheme.typography.titleLarge,
+                color = NXGreen,
+                fontWeight = FontWeight.Black
+            )
+        }
+    }
+}
+
+@Composable
+private fun KeyMissingState() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(horizontal = 12.dp)
+    ) {
+        Icon(Icons.Filled.Key, contentDescription = null, tint = NXTextMuted, modifier = Modifier.size(34.dp))
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = "CurseForge API key required",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "Add your key to Constants.kt to enable CurseForge. Modrinth works without a key.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = NXTextSecondary
+        )
+    }
+}
+
+@Composable
+private fun ErrorState(message: String, onRetry: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(message, color = NXTextMuted, style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.height(12.dp))
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(NXGreen.copy(alpha = 0.16f))
+                .clickable { onRetry() }
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Filled.Refresh, contentDescription = null, tint = NXGreen, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Retry", color = NXGreen, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
 private fun PaginationBar(
     page: Int,
     pageCount: Int,
+    enabled: Boolean,
     onFirst: () -> Unit,
     onPrev: () -> Unit,
     onNext: () -> Unit,
@@ -416,8 +453,8 @@ private fun PaginationBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        PageButton(Icons.Filled.FirstPage, enabled = page > 0, onClick = onFirst)
-        PageButton(Icons.Filled.KeyboardArrowLeft, enabled = page > 0, onClick = onPrev)
+        PageButton(Icons.Filled.FirstPage, enabled = enabled && page > 0, onClick = onFirst)
+        PageButton(Icons.Filled.KeyboardArrowLeft, enabled = enabled && page > 0, onClick = onPrev)
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
@@ -431,8 +468,8 @@ private fun PaginationBar(
                 fontWeight = FontWeight.Bold
             )
         }
-        PageButton(Icons.Filled.KeyboardArrowRight, enabled = page < pageCount - 1, onClick = onNext)
-        PageButton(Icons.Filled.LastPage, enabled = page < pageCount - 1, onClick = onLast)
+        PageButton(Icons.Filled.KeyboardArrowRight, enabled = enabled && page < pageCount - 1, onClick = onNext)
+        PageButton(Icons.Filled.LastPage, enabled = enabled && page < pageCount - 1, onClick = onLast)
     }
 }
 

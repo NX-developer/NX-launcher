@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -18,8 +19,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -27,7 +28,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.nxlauncher.data.sample.SampleData
+import com.nxlauncher.data.model.ModSource
+import com.nxlauncher.data.repository.MojangRepository
 import com.nxlauncher.navigation.NavRoute
 import com.nxlauncher.navigation.bottomNavItems
 import com.nxlauncher.ui.screens.HomeScreen
@@ -37,10 +39,9 @@ import com.nxlauncher.ui.screens.SettingsScreen
 import com.nxlauncher.ui.screens.VersionsScreen
 import com.nxlauncher.ui.theme.NXBackground
 import com.nxlauncher.ui.theme.NXGreen
-import com.nxlauncher.ui.theme.NXOutline
+import com.nxlauncher.ui.theme.NXLauncherTheme
 import com.nxlauncher.ui.theme.NXSurface
 import com.nxlauncher.ui.theme.NXTextMuted
-import com.nxlauncher.ui.theme.NXLauncherTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,7 +61,12 @@ private fun NXApp() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomNavItems.map { it.route }
-    val selectedVersion = SampleData.versions.firstOrNull { it.installed }?.id ?: SampleData.versions.first().id
+
+    val latestVersion by produceState(initialValue = "26.1.2") {
+        runCatching { MojangRepository.latestRelease() }
+            .getOrNull()
+            ?.let { value = it }
+    }
 
     Scaffold(
         containerColor = NXBackground,
@@ -92,7 +98,7 @@ private fun NXApp() {
             ) {
                 composable(NavRoute.Home.route) {
                     HomeScreen(
-                        selectedVersion = selectedVersion,
+                        selectedVersion = latestVersion,
                         onVersionClick = { navController.navigate(NavRoute.Versions.route) },
                         onSettingsClick = { navController.navigate(NavRoute.Settings.route) }
                     )
@@ -102,8 +108,8 @@ private fun NXApp() {
                 }
                 composable(NavRoute.Mods.route) {
                     ModsScreen(
-                        onModClick = { modId ->
-                            navController.navigate(NavRoute.ModDetail.create(modId))
+                        onModClick = { source, modId ->
+                            navController.navigate(NavRoute.ModDetail.create(source.name, modId))
                         }
                     )
                 }
@@ -112,11 +118,17 @@ private fun NXApp() {
                 }
                 composable(
                     route = NavRoute.ModDetail.route,
-                    arguments = listOf(navArgument("modId") { type = NavType.StringType })
+                    arguments = listOf(
+                        navArgument("source") { type = NavType.StringType },
+                        navArgument("modId") { type = NavType.StringType }
+                    )
                 ) { entry ->
+                    val sourceName = entry.arguments?.getString("source").orEmpty()
                     val modId = entry.arguments?.getString("modId").orEmpty()
+                    val source = runCatching { ModSource.valueOf(sourceName) }.getOrDefault(ModSource.MODRINTH)
                     ModDetailScreen(
-                        modId = modId,
+                        source = source,
+                        id = modId,
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -141,7 +153,7 @@ private fun NXBottomBar(
                 selected = selected,
                 onClick = { onNavigate(item.route) },
                 icon = {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = item.icon,
                         contentDescription = stringResource(item.labelRes)
                     )

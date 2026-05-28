@@ -1,5 +1,7 @@
 package com.nxlauncher.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,18 +13,26 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.DeveloperMode
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Monitor
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -30,6 +40,9 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -42,8 +55,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.nxlauncher.data.Constants
 import com.nxlauncher.ui.components.FilterChip
 import com.nxlauncher.ui.theme.NXGreen
 import com.nxlauncher.ui.theme.NXGreenDark
@@ -54,17 +70,44 @@ import com.nxlauncher.ui.theme.NXTextMuted
 import com.nxlauncher.ui.theme.NXTextSecondary
 import kotlin.math.roundToInt
 
+private val GAME_LANGUAGES = listOf(
+    "English" to "en_us",
+    "Türkçe" to "tr_tr",
+    "Deutsch" to "de_de",
+    "Español" to "es_es",
+    "Français" to "fr_fr",
+    "Italiano" to "it_it",
+    "Português (Brasil)" to "pt_br",
+    "Русский" to "ru_ru",
+    "日本語" to "ja_jp",
+    "한국어" to "ko_kr",
+    "简体中文" to "zh_cn",
+    "繁體中文" to "zh_tw",
+    "Polski" to "pl_pl",
+    "Nederlands" to "nl_nl",
+    "Українська" to "uk_ua",
+    "العربية" to "ar_sa"
+)
+
 @Composable
 fun SettingsScreen() {
-    var resolution by remember { mutableFloatStateOf(100f) }
+    var resolution by remember { mutableIntStateOf(100) }
     var ram by remember { mutableIntStateOf(2048) }
     var renderer by remember { mutableStateOf("Zink") }
     var runtime by remember { mutableStateOf("Java 17") }
+    var gameLanguage by remember { mutableStateOf("English") }
+    var jvmArgs by remember { mutableStateOf("") }
     var touchControls by remember { mutableStateOf(true) }
     var gamepad by remember { mutableStateOf(false) }
     var gesture by remember { mutableStateOf(true) }
     var keepScreenOn by remember { mutableStateOf(true) }
     var highPriority by remember { mutableStateOf(false) }
+
+    var showResolutionDialog by remember { mutableStateOf(false) }
+    var showRamDialog by remember { mutableStateOf(false) }
+    var showJvmDialog by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -84,26 +127,28 @@ fun SettingsScreen() {
             SliderSetting(
                 title = "Resolution scale",
                 description = "Lower the resolution to gain more FPS on weaker devices",
-                value = resolution,
-                valueLabel = resolution.roundToInt().toString() + "%",
+                value = resolution.toFloat(),
+                valueLabel = "$resolution%",
                 range = 25f..100f,
                 steps = 14,
-                onChange = { resolution = it }
+                onChange = { resolution = it.roundToInt() },
+                onValueClick = { showResolutionDialog = true }
             )
             DividerLine()
             SliderSetting(
                 title = "Allocated memory",
                 description = "Amount of RAM reserved for the game",
                 value = ram.toFloat(),
-                valueLabel = ram.toString() + " MB",
-                range = 512f..6144f,
-                steps = 10,
-                onChange = { ram = (it / 256).roundToInt() * 256 }
+                valueLabel = "$ram MB",
+                range = 512f..8192f,
+                steps = 14,
+                onChange = { ram = (it / 256).roundToInt() * 256 },
+                onValueClick = { showRamDialog = true }
             )
             DividerLine()
             ChipSetting(
                 title = "Renderer",
-                options = listOf("Zink", "GL4ES", "VirGL", "Holy GL4ES"),
+                options = listOf("Zink", "GL4ES", "Holy GL4ES", "VirGL"),
                 selected = renderer,
                 onSelect = { renderer = it }
             )
@@ -113,53 +158,40 @@ fun SettingsScreen() {
         SettingsGroup(icon = Icons.Filled.Memory, title = "Runtime") {
             ChipSetting(
                 title = "Java runtime",
-                options = listOf("Java 8", "Java 17", "Java 21"),
+                options = listOf("Java 8", "Java 17", "Java 21", "Java 25"),
                 selected = runtime,
                 onSelect = { runtime = it }
             )
             DividerLine()
-            JvmArgsRow()
+            ActionRow(
+                title = "Custom JVM arguments",
+                value = jvmArgs.ifBlank { "Tap to add" },
+                onClick = { showJvmDialog = true }
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+        SettingsGroup(icon = Icons.Filled.Language, title = "Game") {
+            LanguageSetting(
+                selectedDisplay = gameLanguage,
+                onSelect = { gameLanguage = it }
+            )
         }
 
         Spacer(Modifier.height(16.dp))
         SettingsGroup(icon = Icons.Filled.SportsEsports, title = "Controls") {
-            ToggleSetting(
-                title = "Touch controls",
-                description = "On screen buttons and joystick",
-                checked = touchControls,
-                onChange = { touchControls = it }
-            )
+            ToggleSetting("Touch controls", "On screen buttons and joystick", touchControls) { touchControls = it }
             DividerLine()
-            ToggleSetting(
-                title = "Gamepad support",
-                description = "Map a physical controller",
-                checked = gamepad,
-                onChange = { gamepad = it }
-            )
+            ToggleSetting("Gamepad support", "Map a physical controller", gamepad) { gamepad = it }
             DividerLine()
-            ToggleSetting(
-                title = "Gesture controls",
-                description = "Swipe and pinch interactions",
-                checked = gesture,
-                onChange = { gesture = it }
-            )
+            ToggleSetting("Gesture controls", "Swipe and pinch interactions", gesture) { gesture = it }
         }
 
         Spacer(Modifier.height(16.dp))
         SettingsGroup(icon = Icons.Filled.Monitor, title = "System") {
-            ToggleSetting(
-                title = "Keep screen on",
-                description = "Prevent the display from sleeping while playing",
-                checked = keepScreenOn,
-                onChange = { keepScreenOn = it }
-            )
+            ToggleSetting("Keep screen on", "Prevent the display from sleeping while playing", keepScreenOn) { keepScreenOn = it }
             DividerLine()
-            ToggleSetting(
-                title = "High process priority",
-                description = "Request more CPU time for the game",
-                checked = highPriority,
-                onChange = { highPriority = it }
-            )
+            ToggleSetting("High process priority", "Request more CPU time for the game", highPriority) { highPriority = it }
         }
 
         Spacer(Modifier.height(16.dp))
@@ -169,18 +201,52 @@ fun SettingsScreen() {
             InfoRow(label = "License", value = "AGPL-3.0")
             DividerLine()
             InfoRow(label = "Developer", value = "NX-developer")
+            DividerLine()
+            WebsiteRow(onClick = {
+                runCatching {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Constants.WEBSITE_URL)))
+                }
+            })
         }
 
         Spacer(Modifier.height(28.dp))
     }
+
+    if (showResolutionDialog) {
+        NumberInputDialog(
+            title = "Resolution scale",
+            suffix = "%",
+            initial = resolution,
+            min = 25,
+            max = 100,
+            onDismiss = { showResolutionDialog = false },
+            onConfirm = { resolution = it; showResolutionDialog = false }
+        )
+    }
+    if (showRamDialog) {
+        NumberInputDialog(
+            title = "Allocated memory",
+            suffix = "MB",
+            initial = ram,
+            min = 512,
+            max = 8192,
+            onDismiss = { showRamDialog = false },
+            onConfirm = { ram = it; showRamDialog = false }
+        )
+    }
+    if (showJvmDialog) {
+        TextInputDialog(
+            title = "Custom JVM arguments",
+            initial = jvmArgs,
+            placeholder = "-XX:+UseG1GC -Xss2M",
+            onDismiss = { showJvmDialog = false },
+            onConfirm = { jvmArgs = it.trim(); showJvmDialog = false }
+        )
+    }
 }
 
 @Composable
-private fun SettingsGroup(
-    icon: ImageVector,
-    title: String,
-    content: @Composable () -> Unit
-) {
+private fun SettingsGroup(icon: ImageVector, title: String, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -200,12 +266,7 @@ private fun SettingsGroup(
                 Icon(icon, contentDescription = null, tint = NXGreen, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.width(12.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
-            )
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.height(14.dp))
         content()
@@ -220,7 +281,8 @@ private fun SliderSetting(
     valueLabel: String,
     range: ClosedFloatingPointRange<Float>,
     steps: Int,
-    onChange: (Float) -> Unit
+    onChange: (Float) -> Unit,
+    onValueClick: () -> Unit
 ) {
     Column {
         Row(
@@ -233,7 +295,8 @@ private fun SliderSetting(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(NXGreen.copy(alpha = 0.16f))
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                    .clickable { onValueClick() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(valueLabel, style = MaterialTheme.typography.labelSmall, color = NXGreen, fontWeight = FontWeight.Bold)
             }
@@ -254,12 +317,7 @@ private fun SliderSetting(
 }
 
 @Composable
-private fun ChipSetting(
-    title: String,
-    options: List<String>,
-    selected: String,
-    onSelect: (String) -> Unit
-) {
+private fun ChipSetting(title: String, options: List<String>, selected: String, onSelect: (String) -> Unit) {
     Column {
         Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
         Spacer(Modifier.height(10.dp))
@@ -272,16 +330,55 @@ private fun ChipSetting(
 }
 
 @Composable
-private fun ToggleSetting(
-    title: String,
-    description: String,
-    checked: Boolean,
-    onChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+private fun LanguageSetting(selectedDisplay: String, onSelect: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val code = GAME_LANGUAGES.firstOrNull { it.first == selectedDisplay }?.second ?: "en_us"
+    Column {
+        Text("In game language", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+        Text("Language used inside Minecraft. The launcher stays in English.", style = MaterialTheme.typography.bodyMedium, color = NXTextSecondary)
+        Spacer(Modifier.height(10.dp))
+        Box {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(NXSurfaceVariant)
+                    .clickable { expanded = true }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(selectedDisplay, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+                    Text(code, style = MaterialTheme.typography.labelSmall, color = NXTextMuted)
+                }
+                Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = NXTextSecondary)
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                    .background(NXSurfaceVariant)
+                    .heightIn(max = 360.dp)
+            ) {
+                GAME_LANGUAGES.forEach { (display, langCode) ->
+                    DropdownMenuItem(
+                        text = {
+                            Column {
+                                Text(display, color = MaterialTheme.colorScheme.onBackground)
+                                Text(langCode, style = MaterialTheme.typography.labelSmall, color = NXTextMuted)
+                            }
+                        },
+                        onClick = { onSelect(display); expanded = false }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ToggleSetting(title: String, description: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
             Text(description, style = MaterialTheme.typography.bodyMedium, color = NXTextSecondary)
@@ -301,29 +398,43 @@ private fun ToggleSetting(
 }
 
 @Composable
-private fun JvmArgsRow() {
+private fun ActionRow(title: String, value: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(NXSurfaceVariant)
-            .clickable { }
+            .clickable { onClick() }
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text("Custom JVM arguments", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-            Text("-XX:+UnlockExperimentalVMOptions", style = MaterialTheme.typography.labelSmall, color = NXTextMuted)
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
+            Text(value, style = MaterialTheme.typography.labelSmall, color = NXTextMuted, maxLines = 1)
         }
+        Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = NXTextSecondary)
+    }
+}
+
+@Composable
+private fun WebsiteRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Website", style = MaterialTheme.typography.bodyLarge, color = NXTextSecondary)
+            Text(Constants.WEBSITE_URL, style = MaterialTheme.typography.labelSmall, color = NXGreen)
+        }
+        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = NXGreen, modifier = Modifier.size(18.dp))
     }
 }
 
 @Composable
 private fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, style = MaterialTheme.typography.bodyLarge, color = NXTextSecondary)
         Text(value, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
     }
@@ -339,3 +450,86 @@ private fun DividerLine() {
             .background(NXOutline)
     )
 }
+
+@Composable
+private fun NumberInputDialog(
+    title: String,
+    suffix: String,
+    initial: Int,
+    min: Int,
+    max: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var text by remember { mutableStateOf(initial.toString()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = NXSurface,
+        titleContentColor = MaterialTheme.colorScheme.onBackground,
+        title = { Text(title) },
+        text = {
+            Column {
+                Text("Enter a value between $min and $max $suffix", style = MaterialTheme.typography.bodyMedium, color = NXTextSecondary)
+                Spacer(Modifier.height(12.dp))
+                TextField(
+                    value = text,
+                    onValueChange = { input -> text = input.filter { it.isDigit() }.take(6) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = dialogFieldColors()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val parsed = text.toIntOrNull() ?: initial
+                onConfirm(parsed.coerceIn(min, max))
+            }) { Text("Save", color = NXGreen) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = NXTextSecondary) }
+        }
+    )
+}
+
+@Composable
+private fun TextInputDialog(
+    title: String,
+    initial: String,
+    placeholder: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var text by remember { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = NXSurface,
+        titleContentColor = MaterialTheme.colorScheme.onBackground,
+        title = { Text(title) },
+        text = {
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                placeholder = { Text(placeholder, color = NXTextMuted) },
+                colors = dialogFieldColors()
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(text) }) { Text("Save", color = NXGreen) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = NXTextSecondary) }
+        }
+    )
+}
+
+@Composable
+private fun dialogFieldColors() = TextFieldDefaults.colors(
+    focusedContainerColor = NXSurfaceVariant,
+    unfocusedContainerColor = NXSurfaceVariant,
+    focusedIndicatorColor = NXGreen,
+    unfocusedIndicatorColor = NXOutline,
+    cursorColor = NXGreen,
+    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+    unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+)

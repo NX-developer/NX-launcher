@@ -6,8 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,22 +22,26 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.nxlauncher.data.model.ModDependency
-import com.nxlauncher.data.model.ModItem
-import com.nxlauncher.data.sample.SampleData
+import com.nxlauncher.data.model.ModDetail
+import com.nxlauncher.data.model.ModSource
 import com.nxlauncher.ui.components.TagPill
 import com.nxlauncher.ui.components.formatDownloads
 import com.nxlauncher.ui.theme.NXAmber
@@ -47,16 +51,12 @@ import com.nxlauncher.ui.theme.NXSurface
 import com.nxlauncher.ui.theme.NXSurfaceVariant
 import com.nxlauncher.ui.theme.NXTextMuted
 import com.nxlauncher.ui.theme.NXTextSecondary
+import com.nxlauncher.ui.vm.ModDetailViewModel
 
 @Composable
-fun ModDetailScreen(modId: String, onBack: () -> Unit) {
-    val mod = SampleData.mods.firstOrNull { it.id == modId }
-    if (mod == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Mod not found", color = NXTextMuted)
-        }
-        return
-    }
+fun ModDetailScreen(source: ModSource, id: String, onBack: () -> Unit) {
+    val vm: ModDetailViewModel = viewModel()
+    LaunchedEffect(source, id) { vm.start(source, id) }
 
     Column(
         modifier = Modifier
@@ -78,109 +78,137 @@ fun ModDetailScreen(modId: String, onBack: () -> Unit) {
 
         Spacer(Modifier.height(20.dp))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(mod.iconColor)),
+        when {
+            vm.loading -> Box(
+                modifier = Modifier.fillMaxWidth().height(320.dp),
                 contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = mod.name.take(1).uppercase(),
-                    style = MaterialTheme.typography.displaySmall,
-                    color = Color.White,
-                    fontWeight = FontWeight.Black
-                )
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = mod.name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "by " + mod.author,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = NXTextSecondary
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(9.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(mod.source.accent)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = mod.source.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = mod.source.accent,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
+            ) { CircularProgressIndicator(color = NXGreen) }
 
-        Spacer(Modifier.height(18.dp))
+            vm.error != null -> Box(
+                modifier = Modifier.fillMaxWidth().height(320.dp),
+                contentAlignment = Alignment.Center
+            ) { Text(vm.error.orEmpty(), color = NXTextMuted) }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            StatBox(modifier = Modifier.weight(1f), value = formatDownloads(mod.downloads), label = "Downloads")
-            StatBox(modifier = Modifier.weight(1f), value = mod.supportedVersions.size.toString(), label = "Versions")
-            StatBox(modifier = Modifier.weight(1f), value = mod.supportedLoaders.size.toString(), label = "Loaders")
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        Text(
-            text = "Description",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = mod.description,
-            style = MaterialTheme.typography.bodyLarge,
-            color = NXTextSecondary
-        )
-
-        Spacer(Modifier.height(22.dp))
-
-        RequirementSection(mod = mod)
-
-        Spacer(Modifier.height(20.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(NXAmber.copy(alpha = 0.10f))
-                .border(1.dp, NXAmber.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
-                .padding(16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Info, contentDescription = null, tint = NXAmber, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = "Downloading will be available in the next phase.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = NXAmber
-                )
-            }
+            vm.detail != null -> DetailContent(vm.detail!!)
         }
 
         Spacer(Modifier.height(28.dp))
     }
 }
 
+@Composable
+private fun DetailContent(mod: ModDetail) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(NXSurfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            if (mod.iconUrl != null) {
+                AsyncImage(
+                    model = mod.iconUrl,
+                    contentDescription = mod.name,
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(18.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = mod.name.take(1).uppercase(),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = NXGreen,
+                    fontWeight = FontWeight.Black
+                )
+            }
+        }
+        Spacer(Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = mod.name,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            if (mod.author.isNotBlank()) {
+                Text(
+                    text = "by " + mod.author,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = NXTextSecondary
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(9.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(mod.source.accent)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = mod.source.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = mod.source.accent,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+
+    Spacer(Modifier.height(18.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        StatBox(modifier = Modifier.weight(1f), value = formatDownloads(mod.downloads), label = "Downloads")
+        StatBox(modifier = Modifier.weight(1f), value = mod.gameVersions.size.toString(), label = "Versions")
+        StatBox(modifier = Modifier.weight(1f), value = mod.loaders.size.toString(), label = "Loaders")
+    }
+
+    Spacer(Modifier.height(20.dp))
+
+    Text(
+        text = "Description",
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onBackground
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        text = mod.description,
+        style = MaterialTheme.typography.bodyLarge,
+        color = NXTextSecondary
+    )
+
+    Spacer(Modifier.height(22.dp))
+
+    RequirementSection(mod = mod)
+
+    Spacer(Modifier.height(20.dp))
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(NXAmber.copy(alpha = 0.10f))
+            .border(1.dp, NXAmber.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+            .padding(16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Info, contentDescription = null, tint = NXAmber, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = "Downloading will be available in the next phase.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = NXAmber
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RequirementSection(mod: ModItem) {
+private fun RequirementSection(mod: ModDetail) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -196,46 +224,38 @@ private fun RequirementSection(mod: ModItem) {
         )
 
         Spacer(Modifier.height(16.dp))
-        Text(
-            text = "Supported versions",
-            style = MaterialTheme.typography.labelSmall,
-            color = NXTextMuted
-        )
+        Text("Supported versions", style = MaterialTheme.typography.labelSmall, color = NXTextMuted)
         Spacer(Modifier.height(8.dp))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            mod.supportedVersions.forEach { TagPill(it, NXGreen) }
+        if (mod.gameVersions.isEmpty()) {
+            Text("Not listed", style = MaterialTheme.typography.bodyMedium, color = NXTextSecondary)
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                mod.gameVersions.take(40).forEach { TagPill(it, NXGreen) }
+            }
         }
 
         Spacer(Modifier.height(16.dp))
-        Text(
-            text = "Supported loaders",
-            style = MaterialTheme.typography.labelSmall,
-            color = NXTextMuted
-        )
+        Text("Supported loaders", style = MaterialTheme.typography.labelSmall, color = NXTextMuted)
         Spacer(Modifier.height(8.dp))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            mod.supportedLoaders.forEach { TagPill(it.label, mod.source.accent) }
+        if (mod.loaders.isEmpty()) {
+            Text("Not listed", style = MaterialTheme.typography.bodyMedium, color = NXTextSecondary)
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                mod.loaders.forEach { TagPill(it.replaceFirstChar { c -> c.uppercase() }, mod.source.accent) }
+            }
         }
 
         Spacer(Modifier.height(16.dp))
-        Text(
-            text = "Dependencies",
-            style = MaterialTheme.typography.labelSmall,
-            color = NXTextMuted
-        )
+        Text("Dependencies", style = MaterialTheme.typography.labelSmall, color = NXTextMuted)
         Spacer(Modifier.height(8.dp))
         if (mod.dependencies.isEmpty()) {
-            Text(
-                text = "No additional dependencies required",
-                style = MaterialTheme.typography.bodyMedium,
-                color = NXTextSecondary
-            )
+            Text("No additional dependencies required", style = MaterialTheme.typography.bodyMedium, color = NXTextSecondary)
         } else {
             mod.dependencies.forEach { dependency ->
                 DependencyRow(dependency)
@@ -287,17 +307,8 @@ private fun StatBox(modifier: Modifier = Modifier, value: String, label: String)
             .padding(vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            color = NXGreen,
-            fontWeight = FontWeight.Bold
-        )
+        Text(value, style = MaterialTheme.typography.titleLarge, color = NXGreen, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(2.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = NXTextMuted
-        )
+        Text(label, style = MaterialTheme.typography.labelSmall, color = NXTextMuted)
     }
 }
