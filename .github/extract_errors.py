@@ -1,0 +1,53 @@
+import re
+import sys
+
+INPUT = "build_log.txt"
+OUTPUT = "error.txt"
+
+PATTERNS = [
+    re.compile(r"^e: "),
+    re.compile(r"error:", re.IGNORECASE),
+    re.compile(r"FAILURE:"),
+    re.compile(r"What went wrong:"),
+    re.compile(r"Caused by:"),
+    re.compile(r"Exception"),
+    re.compile(r"> Task .* FAILED"),
+    re.compile(r"AAPT"),
+    re.compile(r"Unresolved reference"),
+    re.compile(r"BUILD FAILED"),
+]
+
+
+def main():
+    try:
+        with open(INPUT, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        with open(OUTPUT, "w", encoding="utf-8") as out:
+            out.write("build_log.txt not found\n")
+        return
+
+    collected = []
+    for index, line in enumerate(lines):
+        stripped = line.rstrip("\n")
+        for pattern in PATTERNS:
+            if pattern.search(stripped):
+                start = max(0, index - 1)
+                end = min(len(lines), index + 4)
+                block = [l.rstrip("\n") for l in lines[start:end]]
+                collected.append("\n".join(block))
+                collected.append("-" * 60)
+                break
+
+    with open(OUTPUT, "w", encoding="utf-8") as out:
+        if collected:
+            out.write("NX Launcher build errors\n")
+            out.write("=" * 60 + "\n\n")
+            out.write("\n".join(collected))
+            out.write("\n")
+        else:
+            out.write("No matching error lines were found in the build log.\n")
+
+
+if __name__ == "__main__":
+    main()
