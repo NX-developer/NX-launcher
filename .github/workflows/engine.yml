@@ -35,33 +35,30 @@ jobs:
       - name: Get JRE 8
         uses: dawidd6/action-download-artifact@v9
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: build.yml
+          github_token: ${{ secrets.GH_PAT }}
           path: app_pojavlauncher/src/main/assets/components/jre
           workflow_conclusion: success
-          repo: PojavLauncherTeam/android-openjdk-build-multiarch
+          repo: AngelAuraMC/angelauramc-openjdk-build
           branch: buildjre8
           name: jre8-pojav
 
       - name: Get JRE 17
         uses: dawidd6/action-download-artifact@v9
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: build.yml
+          github_token: ${{ secrets.GH_PAT }}
           path: app_pojavlauncher/src/main/assets/components/jre-new
           workflow_conclusion: success
-          repo: PojavLauncherTeam/android-openjdk-build-multiarch
+          repo: AngelAuraMC/angelauramc-openjdk-build
           branch: buildjre17-21
           name: jre17-pojav
 
       - name: Get JRE 21
         uses: dawidd6/action-download-artifact@v9
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: build.yml
+          github_token: ${{ secrets.GH_PAT }}
           path: app_pojavlauncher/src/main/assets/components/jre-21
           workflow_conclusion: success
-          repo: PojavLauncherTeam/android-openjdk-build-multiarch
+          repo: AngelAuraMC/angelauramc-openjdk-build
           branch: buildjre17-21
           name: jre21-pojav
 
