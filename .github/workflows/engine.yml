@@ -36,6 +36,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v9
         with:
           github_token: ${{ secrets.GH_PAT }}
+          workflow: build.yml
           path: app_pojavlauncher/src/main/assets/components/jre
           workflow_conclusion: success
           repo: AngelAuraMC/angelauramc-openjdk-build
@@ -46,20 +47,22 @@ jobs:
         uses: dawidd6/action-download-artifact@v9
         with:
           github_token: ${{ secrets.GH_PAT }}
+          workflow: build.yml
           path: app_pojavlauncher/src/main/assets/components/jre-new
           workflow_conclusion: success
           repo: AngelAuraMC/angelauramc-openjdk-build
-          branch: buildjre17-21
+          branch: eva/buildjre-17-21-25
           name: jre17-pojav
 
       - name: Get JRE 21
         uses: dawidd6/action-download-artifact@v9
         with:
           github_token: ${{ secrets.GH_PAT }}
+          workflow: build.yml
           path: app_pojavlauncher/src/main/assets/components/jre-21
           workflow_conclusion: success
           repo: AngelAuraMC/angelauramc-openjdk-build
-          branch: buildjre17-21
+          branch: eva/buildjre-17-21-25
           name: jre21-pojav
 
       - name: Grant gradlew permission
