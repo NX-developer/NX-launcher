@@ -2,16 +2,16 @@
     <string name="app_name" translatable="false">NX Launcher</string>
     <string name="app_name_import">Install Modpack</string>
 
-    <string name="splash_agreement">FCL requires storage permission to manage and read game files. FCL is fully open-source on GitHub, so please rest assured about your data security. The permission is solely for the game to operate properly and poses no security risks.</string>
-    <string name="splash_permission_msg">No storage permission, please grant Fold Craft Launcher the permission.</string>
+    <string name="splash_agreement">NX Launcher requires storage permission to manage and read game files. It is fully open-source on GitHub, so please rest assured about your data security. The permission is solely for the game to operate properly and poses no security risks.</string>
+    <string name="splash_permission_msg">No storage permission, please grant NX Launcher the permission.</string>
     <string name="splash_permission_grant">Grant</string>
     <string name="splash_permission_title">Permission to store needed</string>
     <string name="splash_permission_close">Close the app</string>
     <string name="splash_permission_settings">Settings</string>
     <string name="splash_permission_settings_msg">You have chosen "Never Allow" Please manually grant storage permissions in settings.</string>
-    <string name="notification_permission">FCL requires permission to post notifications to prevent issues with normal game installation or startup.</string>
+    <string name="notification_permission">NX Launcher requires permission to post notifications to prevent issues with normal game installation or startup.</string>
 
-    <string name="splash_title">Welcome to Fold Craft Launcher</string>
+    <string name="splash_title">Welcome to NX Launcher</string>
     <string name="splash_eula_error">Cannot get EULA, please check the network.</string>
     <string name="splash_eula_next">Agree and Continue</string>
     <string name="splash_runtime_title">Install or update app runtime</string>
@@ -36,11 +36,11 @@
     <string name="setting">Setting</string>
     
     <string name="about">About</string>
-    <string name="about_launcher" translatable="false">Fold Craft Launcher</string>
-    <string name="about_developer" translatable="false">FCL-Team</string>
+    <string name="about_launcher" translatable="false">NX Launcher</string>
+    <string name="about_developer" translatable="false">NX-developer</string>
     <string name="about_sponsor">Sponsor</string>
     <string name="about_source">Open Source</string>
-    <string name="about_desc">Fold Craft Launcher is an Android Minecraft Launcher, allows user to launch Minecraft: Java Edition on Android device.\n\nFold Craft Launcher is developed by FCL-Team.\n\nFold Craft Launcher\'s most features are modified based on HMCLCore.\n\nThe app borrows and quotes some codes of PojavLauncher and Boat, so if you are going to distribute this app, please follow GPL-v3 License.</string>
+    <string name="about_desc">NX Launcher is an Android Minecraft launcher that lets you play Minecraft: Java Edition on Android.\n\nNX Launcher is built on Fold Craft Launcher by FCL-Team.\n\nMost features are based on HMCLCore, and it borrows code from PojavLauncher and Boat. If you distribute this app, please follow the GPL-v3 License.</string>
 
     <string name="account_add_server">Add Authentication Server</string>
     <string name="account_add_server_url">Server URL</string>
@@ -386,11 +386,11 @@
     <string name="folder_config">Browse configs</string>
     <string name="folder_game">Browse game directory</string>
     <string name="folder_log">Browse log directory</string>
-    <string name="folder_fcl_log">Browse FCL logs</string>
+    <string name="folder_fcl_log">Browse NX logs</string>
     <string name="upload_log">Upload Log</string>
      <string name="log_not_found">Log file not found</string>
      <string name="log_too_large">Log file is too large</string>
-    <string name="upload_fcl_log">Upload FCL log</string>
+    <string name="upload_fcl_log">Upload NX log</string>
     <string name="upload_game_log">Upload game log</string>
     <string name="upload_success">Upload success! URL copied to clipboard: %s</string>
     <string name="upload_failed">Upload failed: %s</string>
@@ -668,7 +668,7 @@
     <string name="modpack_type_curse_tolerable_error">Unable to download dependencies, you can try to continue downloading by launching this game instance.</string>
     <string name="modpack_type_curse_error">Unable to download dependencies from CurseForge, please try again or use a proxy connection.</string>
     <string name="modpack_type_curse_not_found">Some dependencies are no longer available, please try to install a newer version of the modpack.</string>
-    <string name="modpack_type_manual_warning">The modpack is manually packaged by the publisher, which may already contain a launcher. It is recommended to try to decompress and run the game with its own launcher. FCL can still import it, with no guarantee of its usability, still continue?</string>
+    <string name="modpack_type_manual_warning">The modpack is manually packaged by the publisher, which may already contain a launcher. It is recommended to try to decompress and run the game with its own launcher. NX Launcher can still import it, with no guarantee of its usability, still continue?</string>
     <string name="modpack_type_mcbbs">MCBBS Type</string>
     <string name="modpack_type_mcbbs_export">Can be imported by FCL, HMCL and MultiMC</string>
     <string name="modpack_type_modrinth">Modrinth</string>
