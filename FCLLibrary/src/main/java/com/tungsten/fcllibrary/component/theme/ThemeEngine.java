@@ -175,7 +175,7 @@ public class ThemeEngine {
     }
 
     public static int getWallpaperColor(Context context) {
-        int color = Color.parseColor("#7797CF");
+        int color = Color.parseColor("#5CDB6B");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             WallpaperColors colors = WallpaperManager.getInstance(context).getWallpaperColors(WallpaperManager.FLAG_SYSTEM);
             if (colors != null) {
