@@ -42,7 +42,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.tungsten.fcl"
+        applicationId = "com.nxlauncher"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1309
@@ -72,7 +72,7 @@ android {
                 if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
                     (output.getFilter(ABI)?.identifier ?: "all").let { abi ->
                         output.outputFileName =
-                            "FCL-${variant.buildType}-${defaultConfig.versionName}-${abi}.apk"
+                            "NX-Launcher-${variant.buildType}-${defaultConfig.versionName}-${abi}.apk"
                     }
 
                     val variantName = variant.name.replaceFirstChar { it.uppercaseChar() }
