@@ -67,7 +67,7 @@ public class AboutPage extends FCLCommonPage implements View.OnClickListener {
             url = "https://afdian.com/@tungs";
         }
         if (v == source) {
-            url = "https://github.com/FCL-Team/FoldCraftLauncher";
+            url = "https://github.com/NX-developer/NX-launcher";
         }
 
         if (url != null) {
