@@ -63,6 +63,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.nxlauncher.data.Constants
+import net.kdt.pojavlaunch.extra.ExtraConstants
+import net.kdt.pojavlaunch.extra.ExtraCore
 import com.nxlauncher.data.DeviceInfo
 import com.nxlauncher.data.JavaRuntimes
 import com.nxlauncher.ui.components.FilterChip
@@ -211,10 +213,19 @@ fun SettingsScreen() {
         }
 
         Spacer(Modifier.height(16.dp))
+        SettingsGroup(icon = Icons.Filled.Tune, title = "Advanced") {
+            ActionRow(
+                title = "All launcher settings",
+                value = "Renderer, controls, Java & more",
+                onClick = { ExtraCore.setValue(ExtraConstants.OPEN_LAUNCHER_SETTINGS, true) }
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
         SettingsGroup(icon = Icons.Filled.DeveloperMode, title = "About") {
             InfoRow(label = "App version", value = "0.1")
             DividerLine()
-            InfoRow(label = "License", value = "AGPL-3.0")
+            InfoRow(label = "License", value = "GPL-3.0")
             DividerLine()
             InfoRow(label = "Developer", value = "NX-developer")
             DividerLine()

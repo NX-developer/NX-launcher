@@ -103,6 +103,15 @@ public class LauncherActivity extends BaseActivity {
         }
     };
 
+    /* Opens the launcher settings from the NX Compose UI */
+    private final ExtraListener<Boolean> mOpenSettingsListener = (key, value) -> {
+        Fragment fragment = getSupportFragmentManager().findFragmentById(mFragmentView.getId());
+        if(fragment instanceof MainMenuFragment){
+            Tools.swapFragment(this, LauncherPreferenceFragment.class, SETTING_FRAGMENT_TAG, null);
+        }
+        return false;
+    };
+
     private final ExtraListener<Boolean> mLaunchGameListener = (key, value) -> {
         if(mProgressLayout.hasProcesses()){
             Toast.makeText(this, R.string.tasks_ongoing, Toast.LENGTH_LONG).show();
@@ -217,6 +226,7 @@ public class LauncherActivity extends BaseActivity {
         ExtraCore.addExtraListener(ExtraConstants.SELECT_AUTH_METHOD, mSelectAuthMethod);
 
         ExtraCore.addExtraListener(ExtraConstants.LAUNCH_GAME, mLaunchGameListener);
+        ExtraCore.addExtraListener(ExtraConstants.OPEN_LAUNCHER_SETTINGS, mOpenSettingsListener);
 
         new AsyncVersionList().getVersionList(versions -> ExtraCore.setValue(ExtraConstants.RELEASE_TABLE, versions), false);
 
@@ -356,5 +366,7 @@ public class LauncherActivity extends BaseActivity {
         mSettingsButton = findViewById(R.id.setting_button);
         mAccountSpinner = findViewById(R.id.account_spinner);
         mProgressLayout = findViewById(R.id.progress_layout);
+        mSettingsButton.setVisibility(android.view.View.GONE);
+        mAccountSpinner.setVisibility(android.view.View.GONE);
     }
 }

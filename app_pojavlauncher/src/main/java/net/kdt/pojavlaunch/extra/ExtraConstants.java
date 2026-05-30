@@ -19,6 +19,7 @@ public class ExtraConstants {
     public static final String REFRESH_VERSION_SPINNER = "refresh_version";
     /* ExtraCore Constant: When we want to launch the game */
     public static final String LAUNCH_GAME = "launch_game";
+    public static final String OPEN_LAUNCHER_SETTINGS = "open_launcher_settings";
 
 
 

@@ -3,6 +3,7 @@ package com.nxlauncher.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.nxlauncher.bridge.NXProfiles
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.CircularProgressIndicator
@@ -55,6 +57,7 @@ import com.nxlauncher.ui.vm.VersionsViewModel
 fun VersionsScreen() {
     val vm: VersionsViewModel = viewModel()
     var typeFilter by remember { mutableStateOf<VersionType?>(VersionType.RELEASE) }
+    var selectedVersion by remember { mutableStateOf(NXProfiles.currentVersion()) }
 
     val latestRelease = remember(vm.versions) {
         vm.versions.firstOrNull { it.type == VersionType.RELEASE }?.id
@@ -76,6 +79,24 @@ fun VersionsScreen() {
             style = MaterialTheme.typography.bodyMedium,
             color = NXTextSecondary
         )
+        Spacer(Modifier.height(12.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(NXSurface)
+                .border(1.dp, NXOutline, RoundedCornerShape(12.dp))
+                .padding(horizontal = 14.dp, vertical = 10.dp)
+        ) {
+            Text(
+                text = if (selectedVersion != null)
+                    "Selected: " + selectedVersion + "  ·  press PLAY on Home to download & launch"
+                else
+                    "Tap a version to select it, then press PLAY on Home to download & launch",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (selectedVersion != null) NXGreen else NXTextSecondary
+            )
+        }
         Spacer(Modifier.height(16.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -100,7 +121,15 @@ fun VersionsScreen() {
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(filtered, key = { it.id }) { version ->
-                    VersionRow(version, isLatest = version.id == latestRelease)
+                    VersionRow(
+                        version = version,
+                        isLatest = version.id == latestRelease,
+                        selected = version.id == selectedVersion,
+                        onSelect = {
+                            NXProfiles.selectVersion(version.id)
+                            selectedVersion = version.id
+                        }
+                    )
                 }
             }
         }
@@ -108,13 +137,19 @@ fun VersionsScreen() {
 }
 
 @Composable
-private fun VersionRow(version: MinecraftVersion, isLatest: Boolean) {
+private fun VersionRow(
+    version: MinecraftVersion,
+    isLatest: Boolean,
+    selected: Boolean,
+    onSelect: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(NXSurface)
-            .border(1.dp, NXOutline, RoundedCornerShape(16.dp))
+            .border(1.dp, if (selected) NXGreen else NXOutline, RoundedCornerShape(16.dp))
+            .clickable { onSelect() }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -150,14 +185,16 @@ private fun VersionRow(version: MinecraftVersion, isLatest: Boolean) {
             )
         }
         Spacer(Modifier.width(10.dp))
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(NXSurfaceVariant)
-                .clickable { }
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Icon(Icons.Filled.Download, contentDescription = null, tint = NXTextSecondary, modifier = Modifier.size(18.dp))
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(NXGreen.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.Check, contentDescription = "Selected", tint = NXGreen, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }
