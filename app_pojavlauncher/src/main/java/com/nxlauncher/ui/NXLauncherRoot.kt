@@ -1,5 +1,6 @@
 package com.nxlauncher.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,6 +52,10 @@ private fun NXApp(onPlay: () -> Unit, onAccount: () -> Unit) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomNavItems.map { it.route }
+
+    BackHandler(enabled = currentRoute != null && currentRoute != NavRoute.Home.route) {
+        navController.popBackStack()
+    }
 
     val latestVersion by produceState(initialValue = "26.1.2") {
         runCatching { MojangRepository.latestRelease() }

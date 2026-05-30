@@ -120,6 +120,7 @@ android {
         versionCode getDateSeconds()
         versionName getVersionName()
         multiDexEnabled true //important
+        resConfigs "en"
         resValue 'string', 'curseforge_api_key', getCFApiKey()
     }
 
