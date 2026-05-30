@@ -380,9 +380,9 @@ h2.sec-title {
 /* mod showcase */
 .mod-wrap {
   display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 50px;
-  align-items: center;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-width: 640px;
 }
 .mod-panel {
   background: linear-gradient(180deg, var(--panel), var(--bg-2));
@@ -678,42 +678,6 @@ footer { border-top: 1px solid var(--line); padding: 46px 0 60px; }
       <p class="sec-intro">Flip between Modrinth and CurseForge instantly. Type a version like 1.21 and the list narrows to mods that actually support it.</p>
     </div>
     <div class="mod-wrap">
-      <div class="mod-panel reveal">
-        <div class="mod-toggle">
-          <button class="on modrinth"><span class="sq" style="background:var(--modrinth)"></span> Modrinth</button>
-          <button class="curseforge"><span class="sq" style="background:var(--curseforge)"></span> CurseForge</button>
-        </div>
-        <div class="mod-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
-          Search mods
-        </div>
-        <div class="mod-filters">
-          <div class="mod-filter"><div class="l">VERSION</div><div class="v">1.21.4 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div></div>
-          <div class="mod-filter"><div class="l">LOADER</div><div class="v">Fabric <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div></div>
-        </div>
-        <div class="mod-row">
-          <div class="icn" style="background:#2d7dd2">S</div>
-          <div class="meta"><div class="nm">Sodium</div><div class="au">by CaffeineMC</div></div>
-          <div class="dl"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l-5-5h3V4h4v7h3z"/></svg> 38.4M</div>
-        </div>
-        <div class="mod-row">
-          <div class="icn" style="background:#9b59b6">I</div>
-          <div class="meta"><div class="nm">Iris Shaders</div><div class="au">by coderbot</div></div>
-          <div class="dl"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l-5-5h3V4h4v7h3z"/></svg> 14.2M</div>
-        </div>
-        <div class="mod-row">
-          <div class="icn" style="background:#6fcf97">L</div>
-          <div class="meta"><div class="nm">Lithium</div><div class="au">by CaffeineMC</div></div>
-          <div class="dl"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l-5-5h3V4h4v7h3z"/></svg> 19.8M</div>
-        </div>
-        <div class="mod-pager">
-          <div class="pb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6l-6 6 6 6M12 6l-6 6 6 6"/></svg></div>
-          <div class="pb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></div>
-          <div class="pn">1 / 6</div>
-          <div class="pb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div>
-          <div class="pb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l6 6-6 6M12 6l6 6-6 6"/></svg></div>
-        </div>
-      </div>
       <ul class="mod-points reveal">
         <li>
           <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
