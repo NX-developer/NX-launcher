@@ -16,18 +16,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.navArgument
 import com.nxlauncher.data.model.ModSource
-import com.nxlauncher.data.repository.MojangRepository
 import com.nxlauncher.navigation.NavRoute
 import com.nxlauncher.navigation.bottomNavItems
+import com.nxlauncher.bridge.NXProfiles
 import com.nxlauncher.ui.screens.HomeScreen
 import com.nxlauncher.ui.screens.ModDetailScreen
 import com.nxlauncher.ui.screens.ModsScreen
@@ -53,14 +53,18 @@ private fun NXApp(onPlay: () -> Unit, onAccount: () -> Unit) {
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomNavItems.map { it.route }
 
+    val topLevel = bottomNavItems.map { it.route }
     BackHandler(enabled = currentRoute != null && currentRoute != NavRoute.Home.route) {
-        navController.popBackStack()
-    }
-
-    val latestVersion by produceState(initialValue = "26.1.2") {
-        runCatching { MojangRepository.latestRelease() }
-            .getOrNull()
-            ?.let { value = it }
+        if (currentRoute in topLevel) {
+            if (!navController.popBackStack(NavRoute.Home.route, false)) {
+                navController.navigate(NavRoute.Home.route) {
+                    popUpTo(navController.graph.findStartDestination().id) { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
+        } else {
+            navController.popBackStack()
+        }
     }
 
     Scaffold(
@@ -70,10 +74,11 @@ private fun NXApp(onPlay: () -> Unit, onAccount: () -> Unit) {
                 NXBottomBar(
                     currentRoute = currentRoute,
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(NavRoute.Home.route) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                        if (route != currentRoute) {
+                            navController.navigate(route) {
+                                popUpTo(navController.graph.findStartDestination().id) { inclusive = false }
+                                launchSingleTop = true
+                            }
                         }
                     }
                 )
@@ -93,7 +98,7 @@ private fun NXApp(onPlay: () -> Unit, onAccount: () -> Unit) {
             ) {
                 composable(NavRoute.Home.route) {
                     HomeScreen(
-                        selectedVersion = latestVersion,
+                        selectedVersion = NXProfiles.currentVersion(),
                         onVersionClick = { navController.navigate(NavRoute.Versions.route) },
                         onSettingsClick = { navController.navigate(NavRoute.Settings.route) },
                         onPlay = onPlay,

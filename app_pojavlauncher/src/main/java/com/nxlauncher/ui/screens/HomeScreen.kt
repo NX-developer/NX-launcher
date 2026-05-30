@@ -47,7 +47,7 @@ import com.nxlauncher.ui.theme.NXTextSecondary
 
 @Composable
 fun HomeScreen(
-    selectedVersion: String,
+    selectedVersion: String?,
     onVersionClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onPlay: () -> Unit,
@@ -253,7 +253,7 @@ private fun AccountChip(username: String, online: Boolean, onClick: () -> Unit) 
 
 @Composable
 private fun VersionSelector(
-    version: String,
+    version: String?,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -268,12 +268,12 @@ private fun VersionSelector(
     ) {
         Column {
             Text(
-                text = "Selected version",
+                text = if (version != null) "Selected version" else "No version selected",
                 style = MaterialTheme.typography.labelSmall,
                 color = NXTextMuted
             )
             Text(
-                text = version,
+                text = version ?: "Tap to choose",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )

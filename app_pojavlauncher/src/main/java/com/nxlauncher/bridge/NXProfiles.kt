@@ -5,22 +5,27 @@ import net.kdt.pojavlaunch.value.launcherprofiles.LauncherProfiles
 import net.kdt.pojavlaunch.value.launcherprofiles.MinecraftProfile
 
 object NXProfiles {
-    private const val NX_PROFILE_KEY = "nx"
+    private const val NX_PROFILE_NAME = "NX"
 
     @JvmStatic
     fun selectVersion(versionId: String) {
         LauncherProfiles.load()
         val root = LauncherProfiles.mainProfileJson ?: return
         val profiles = root.profiles ?: return
-        var profile = profiles[NX_PROFILE_KEY]
-        if (profile == null) {
-            profile = MinecraftProfile.createTemplate()
-            profile.name = "NX"
+
+        var key = profiles.entries.firstOrNull { it.value?.name == NX_PROFILE_NAME }?.key
+        val profile = if (key != null) profiles[key]!! else MinecraftProfile.createTemplate().also {
+            it.name = NX_PROFILE_NAME
         }
         profile.lastVersionId = versionId
-        profiles[NX_PROFILE_KEY] = profile
+
+        if (key == null) {
+            key = LauncherProfiles.getFreeProfileKey()
+        }
+        profiles[key] = profile
+
         LauncherPreferences.DEFAULT_PREF.edit()
-            .putString(LauncherPreferences.PREF_KEY_CURRENT_PROFILE, NX_PROFILE_KEY)
+            .putString(LauncherPreferences.PREF_KEY_CURRENT_PROFILE, key)
             .apply()
         LauncherProfiles.write()
     }
@@ -31,6 +36,8 @@ object NXProfiles {
         val key = LauncherPreferences.DEFAULT_PREF.getString(
             LauncherPreferences.PREF_KEY_CURRENT_PROFILE, null
         ) ?: return null
-        return LauncherProfiles.mainProfileJson?.profiles?.get(key)?.lastVersionId
+        val v = LauncherProfiles.mainProfileJson?.profiles?.get(key)?.lastVersionId
+        if (v == null || v == "Unknown") return null
+        return v
     }
 }
