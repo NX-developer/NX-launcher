@@ -32,7 +32,7 @@ public class FCLPath {
     public static String CONTROLLER_DIR;
 
     public static String PRIVATE_COMMON_DIR;
-    public static String SHARED_COMMON_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/FCL/.minecraft";
+    public static String SHARED_COMMON_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/NXL/.minecraft";
 
     public static String AUTHLIB_INJECTOR_PATH;
     public static String LIB_PATCHER_PATH;
@@ -46,7 +46,7 @@ public class FCLPath {
 
         NATIVE_LIB_DIR = context.getApplicationInfo().nativeLibraryDir;
 
-        LOG_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/FCL/log";
+        LOG_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/NXL/log";
         CACHE_DIR = context.getCacheDir() + "/fclauncher";
 
         RUNTIME_DIR = context.getDir("runtime", 0).getAbsolutePath();
@@ -65,7 +65,7 @@ public class FCLPath {
         FILES_DIR = context.getFilesDir().getAbsolutePath();
         PLUGIN_DIR = FILES_DIR + "/plugins";
         BACKGROUND_DIR = FILES_DIR + "/background";
-        CONTROLLER_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/FCL/control";
+        CONTROLLER_DIR = Environment.getExternalStorageDirectory().getAbsolutePath() + "/NXL/control";
         File externalFilesDir = context.getExternalFilesDir(null);
         if (externalFilesDir == null) {
             externalFilesDir = new File(Environment.getExternalStorageDirectory(), "Android/data/" + context.getPackageName() + "/files");

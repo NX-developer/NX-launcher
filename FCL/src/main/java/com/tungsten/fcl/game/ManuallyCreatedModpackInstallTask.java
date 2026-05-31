@@ -45,7 +45,7 @@ public class ManuallyCreatedModpackInstallTask extends Task<Path> {
 
     @Override
     public void execute() throws Exception {
-        Path dest = Paths.get(Environment.getExternalStorageDirectory().getAbsolutePath() + "/FCL").resolve(name);
+        Path dest = Paths.get(Environment.getExternalStorageDirectory().getAbsolutePath() + "/NXL").resolve(name);
         setResult(dest);
 
         if (zipFile.getFileName().toString().toLowerCase().endsWith(".7z")) {

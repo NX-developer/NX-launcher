@@ -89,35 +89,35 @@
                         android:layout_marginStart="5dp"
                         android:checked="true"
                         android:text="@string/curse_category_0"
-                        app:text_use_theme_color="true" />
+                        android:textColor="#FF000000" />
 
                     <com.tungsten.fcllibrary.component.view.FCLRadioButton
                         android:id="@+id/fabric"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Fabric"
-                        app:text_use_theme_color="true" />
+                        android:textColor="#FF000000" />
 
                     <com.tungsten.fcllibrary.component.view.FCLRadioButton
                         android:id="@+id/forge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Forge"
-                        app:text_use_theme_color="true" />
+                        android:textColor="#FF000000" />
 
                     <com.tungsten.fcllibrary.component.view.FCLRadioButton
                         android:id="@+id/neoforge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="NeoForge"
-                        app:text_use_theme_color="true" />
+                        android:textColor="#FF000000" />
 
                     <com.tungsten.fcllibrary.component.view.FCLRadioButton
                         android:id="@+id/other"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/control_download_device_other"
-                        app:text_use_theme_color="true" />
+                        android:textColor="#FF000000" />
 
                 </RadioGroup>
 

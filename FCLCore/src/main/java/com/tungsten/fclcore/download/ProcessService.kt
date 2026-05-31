@@ -43,7 +43,7 @@ class ProcessService : Service() {
         val jre = "jre$java"
         val config = FCLConfig(
             applicationContext,
-            Environment.getExternalStorageDirectory().absolutePath + "/FCL/log",
+            Environment.getExternalStorageDirectory().absolutePath + "/NXL/log",
             applicationContext.getDir("runtime", 0).absolutePath + "/java/" + jre,
             applicationContext.cacheDir.toString() + "/fclauncher",
             Renderer(
