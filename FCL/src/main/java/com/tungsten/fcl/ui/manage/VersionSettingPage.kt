@@ -18,6 +18,11 @@ import com.mio.ui.dialog.RendererSelectDialog
 import com.mio.util.showErrorDialog
 import com.mio.util.showItemSelectionDialog
 import com.tungsten.fcl.R
+import com.tungsten.fclauncher.plugins.DriverPlugin
+import com.tungsten.fcllibrary.browser.FileBrowser
+import com.tungsten.fcllibrary.browser.options.LibMode
+import com.tungsten.fcllibrary.browser.options.SelectionMode
+import java.io.File
 import com.tungsten.fcl.activity.MainActivity.Companion.getInstance
 import com.tungsten.fcl.control.SelectControllerDialog
 import com.tungsten.fcl.databinding.PageVersionSettingBinding
@@ -575,16 +580,27 @@ class VersionSettingPage(
                 .setItems(
                     arrayOf(
                         "Github",
-                        context.getString(R.string.settings_download_netdisk)
+                        context.getString(R.string.settings_download_netdisk),
+                        context.getString(R.string.settings_driver_local_so)
                     )
                 ) { _, w ->
-                    val url = when (w) {
-                        0 -> "https://github.com/FCL-Team/FCLDriverPlugin/releases/tag/Turnip"
-                        1 -> "https://pan.quark.cn/s/d87c59695250"
-                        else -> null
-                    }
-                    if (url != null) {
-                        AndroidUtils.openLink(context, url)
+                    when (w) {
+                        0 -> AndroidUtils.openLink(context, "https://github.com/FCL-Team/FCLDriverPlugin/releases/tag/Turnip")
+                        1 -> AndroidUtils.openLink(context, "https://pan.quark.cn/s/d87c59695250")
+                        2 -> {
+                            val builder = FileBrowser.Builder(context)
+                            builder.setLibMode(LibMode.FILE_CHOOSER)
+                            builder.setSelectionMode(SelectionMode.SINGLE_SELECTION)
+                            builder.setSuffix(arrayListOf(".so"))
+                            builder.create().browse(getInstance(), 4096) { _, resultCode, data ->
+                                if (resultCode == Activity.RESULT_OK && data != null) {
+                                    val path = FileBrowser.getSelectedFiles(data)[0]
+                                    val message = if (DriverPlugin.importCustomDriver(context, File(path)))
+                                        R.string.settings_driver_local_ok else R.string.settings_driver_local_fail
+                                    Toast.makeText(context, context.getString(message), Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
                     }
                 }
                 .setPositiveButton(R.string.button_cancel, null)

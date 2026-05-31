@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import com.tungsten.fclauncher.utils.FCLPath
+import java.io.File
 
 object DriverPlugin {
     data class Driver(val driver: String, val path: String)
@@ -38,6 +39,23 @@ object DriverPlugin {
             )
         queryIntentActivities.forEach {
             parse(it.activityInfo.applicationInfo)
+        }
+        val customDir = context.getDir("custom_driver", Context.MODE_PRIVATE)
+        if (File(customDir, "libvulkan_freedreno.so").exists()) {
+            add(Driver("Custom", customDir.absolutePath))
+        }
+    }
+
+    @JvmStatic
+    fun importCustomDriver(context: Context, source: File): Boolean {
+        return try {
+            val dir = context.getDir("custom_driver", Context.MODE_PRIVATE)
+            val dest = File(dir, "libvulkan_freedreno.so")
+            source.inputStream().use { input -> dest.outputStream().use { input.copyTo(it) } }
+            add(Driver("Custom", dir.absolutePath))
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 

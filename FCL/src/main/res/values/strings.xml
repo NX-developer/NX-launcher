@@ -1240,4 +1240,7 @@
     <string name="exception_no_suitable_java">Failed to find a suitable Java!</string>
     <string name="slide_selection">Slide Selection</string>
     <string name="swap_hands">Double Tap Swap Hands</string>
+    <string name="settings_driver_local_so">Local .so file</string>
+    <string name="settings_driver_local_ok">Custom driver imported</string>
+    <string name="settings_driver_local_fail">Failed to import driver</string>
 </resources>
