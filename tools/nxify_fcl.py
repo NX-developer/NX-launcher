@@ -303,6 +303,122 @@ NX Launcher is built on Fold Craft Launcher by FCL-Team and is maintained by NX-
 """
 
 
+DRIVER_PLUGIN = "FCLauncher/src/main/java/com/tungsten/fclauncher/plugins/DriverPlugin.kt"
+VERSION_SETTING = "FCL/src/main/java/com/tungsten/fcl/ui/manage/VersionSettingPage.kt"
+
+DRIVER_INIT_OLD = """        queryIntentActivities.forEach {
+            parse(it.activityInfo.applicationInfo)
+        }
+    }"""
+
+DRIVER_INIT_NEW = """        queryIntentActivities.forEach {
+            parse(it.activityInfo.applicationInfo)
+        }
+        val customDir = context.getDir("custom_driver", Context.MODE_PRIVATE)
+        if (File(customDir, "libvulkan_freedreno.so").exists()) {
+            add(Driver("Custom", customDir.absolutePath))
+        }
+    }
+
+    @JvmStatic
+    fun importCustomDriver(context: Context, source: File): Boolean {
+        return try {
+            val dir = context.getDir("custom_driver", Context.MODE_PRIVATE)
+            val dest = File(dir, "libvulkan_freedreno.so")
+            source.inputStream().use { input -> dest.outputStream().use { input.copyTo(it) } }
+            add(Driver("Custom", dir.absolutePath))
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }"""
+
+INSTALL_DRIVER_OLD = '''        if (view === binding.buttonInstallDriver) {
+            AlertDialog.Builder(context)
+                .setTitle(R.string.message_install_plugin)
+                .setItems(
+                    arrayOf(
+                        "Github",
+                        context.getString(R.string.settings_download_netdisk)
+                    )
+                ) { _, w ->
+                    val url = when (w) {
+                        0 -> "https://github.com/FCL-Team/FCLDriverPlugin/releases/tag/Turnip"
+                        1 -> "https://pan.quark.cn/s/d87c59695250"
+                        else -> null
+                    }
+                    if (url != null) {
+                        AndroidUtils.openLink(context, url)
+                    }
+                }
+                .setPositiveButton(R.string.button_cancel, null)
+                .create()
+                .show()
+        }'''
+
+INSTALL_DRIVER_NEW = '''        if (view === binding.buttonInstallDriver) {
+            AlertDialog.Builder(context)
+                .setTitle(R.string.message_install_plugin)
+                .setItems(
+                    arrayOf(
+                        "Github",
+                        context.getString(R.string.settings_download_netdisk),
+                        context.getString(R.string.settings_driver_local_so)
+                    )
+                ) { _, w ->
+                    when (w) {
+                        0 -> AndroidUtils.openLink(context, "https://github.com/FCL-Team/FCLDriverPlugin/releases/tag/Turnip")
+                        1 -> AndroidUtils.openLink(context, "https://pan.quark.cn/s/d87c59695250")
+                        2 -> {
+                            val builder = FileBrowser.Builder(context)
+                            val suffix = ArrayList<String?>()
+                            suffix.add(".so")
+                            builder.setLibMode(LibMode.FILE_CHOOSER)
+                            builder.setSelectionMode(SelectionMode.SINGLE_SELECTION)
+                            builder.setSuffix(suffix)
+                            builder.create().browse(
+                                activity,
+                                RequestCodes.SELECT_VERSION_ICON_CODE
+                            ) { _: Int, resultCode: Int, data: Intent? ->
+                                if (resultCode == Activity.RESULT_OK && data != null) {
+                                    if (FileBrowser.getSelectedFiles(data).isEmpty()) return@browse
+                                    val path = FileBrowser.getSelectedFiles(data)[0]
+                                    val message = if (DriverPlugin.importCustomDriver(context, File(path)))
+                                        R.string.settings_driver_local_ok else R.string.settings_driver_local_fail
+                                    Toast.makeText(context, context.getString(message), Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                }
+                .setPositiveButton(R.string.button_cancel, null)
+                .create()
+                .show()
+        }'''
+
+DRIVER_STRINGS = ('    <string name="settings_driver_local_so">Local .so file</string>\n'
+                  '    <string name="settings_driver_local_ok">Custom driver imported</string>\n'
+                  '    <string name="settings_driver_local_fail">Failed to import driver</string>\n')
+
+
+def driver_so_import():
+    print("[7] Custom .so driver import")
+    replace_in(DRIVER_PLUGIN,
+               "import com.tungsten.fclauncher.utils.FCLPath\n",
+               "import com.tungsten.fclauncher.utils.FCLPath\nimport java.io.File\n",
+               "DriverPlugin: import File")
+    replace_in(DRIVER_PLUGIN, DRIVER_INIT_OLD, DRIVER_INIT_NEW, "DriverPlugin: importCustomDriver + load")
+    replace_in(VERSION_SETTING,
+               "import com.tungsten.fcl.R\n",
+               "import com.tungsten.fcl.R\nimport com.tungsten.fclauncher.plugins.DriverPlugin\n",
+               "VersionSettingPage: import DriverPlugin")
+    replace_in(VERSION_SETTING, INSTALL_DRIVER_OLD, INSTALL_DRIVER_NEW, "install driver dialog + local .so")
+    if "settings_driver_local_so" in open(p(FCL_VALUES), encoding="utf-8").read():
+        status(True, "driver .so strings (already present)")
+    else:
+        replace_in(FCL_VALUES, "</resources>", DRIVER_STRINGS + "</resources>", "driver .so strings")
+
+
 def main():
     print("NX-ify FCL  ->  root: " + ROOT)
     if not os.path.isdir(p("FCL")) or not os.path.isdir(p("FCLLibrary")):
@@ -310,6 +426,7 @@ def main():
         sys.exit(1)
     text_changes()
     gen_assets()
+    driver_so_import()
     print("\nDone. applied=%d  warnings=%d" % (ok, warn))
     if warnings:
         print("Needs manual check (FCL may have changed):")
