@@ -586,11 +586,17 @@ class VersionSettingPage(
                         1 -> AndroidUtils.openLink(context, "https://pan.quark.cn/s/d87c59695250")
                         2 -> {
                             val builder = FileBrowser.Builder(context)
+                            val suffix = ArrayList<String?>()
+                            suffix.add(".so")
                             builder.setLibMode(LibMode.FILE_CHOOSER)
                             builder.setSelectionMode(SelectionMode.SINGLE_SELECTION)
-                            builder.setSuffix(arrayListOf(".so"))
-                            builder.create().browse(getInstance(), 4096) { _, resultCode, data ->
+                            builder.setSuffix(suffix)
+                            builder.create().browse(
+                                activity,
+                                RequestCodes.SELECT_VERSION_ICON_CODE
+                            ) { _: Int, resultCode: Int, data: Intent? ->
                                 if (resultCode == Activity.RESULT_OK && data != null) {
+                                    if (FileBrowser.getSelectedFiles(data).isEmpty()) return@browse
                                     val path = FileBrowser.getSelectedFiles(data)[0]
                                     val message = if (DriverPlugin.importCustomDriver(context, File(path)))
                                         R.string.settings_driver_local_ok else R.string.settings_driver_local_fail
