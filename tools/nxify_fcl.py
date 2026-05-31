@@ -419,6 +419,25 @@ def driver_so_import():
         replace_in(FCL_VALUES, "</resources>", DRIVER_STRINGS + "</resources>", "driver .so strings")
 
 
+NXL_PATH_FILES = [
+    "FCLauncher/src/main/java/com/tungsten/fclauncher/utils/FCLPath.java",
+    "FCLCore/src/main/java/com/tungsten/fclcore/download/ProcessService.kt",
+    "FCL/src/main/java/com/tungsten/fcl/ui/manage/ModUpdatesPage.java",
+    "FCL/src/main/java/com/tungsten/fcl/game/ModpackHelper.java",
+    "FCL/src/main/java/com/tungsten/fcl/game/ManuallyCreatedModpackInstallTask.java",
+]
+
+
+def nxl_storage_and_ui():
+    print("[8] NXL storage dir + version filter contrast")
+    for f in NXL_PATH_FILES:
+        replace_in(f, '"/FCL', '"/NXL', "storage dir -> /NXL (" + f.split("/")[-1] + ")")
+    replace_in("FCL/src/main/res/layout/page_version_list.xml",
+               'app:text_use_theme_color="true"',
+               'android:textColor="#FF000000"',
+               "version filter text -> black")
+
+
 def main():
     print("NX-ify FCL  ->  root: " + ROOT)
     if not os.path.isdir(p("FCL")) or not os.path.isdir(p("FCLLibrary")):
@@ -427,6 +446,7 @@ def main():
     text_changes()
     gen_assets()
     driver_so_import()
+    nxl_storage_and_ui()
     print("\nDone. applied=%d  warnings=%d" % (ok, warn))
     if warnings:
         print("Needs manual check (FCL may have changed):")
