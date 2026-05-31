@@ -87,7 +87,7 @@ public class UpdateDialog extends FCLDialog implements View.OnClickListener {
         netdisk.setOnClickListener(this);
 
         positive.setOnLongClickListener(view -> {
-            AndroidUtils.openLink(getContext(),"https://github.com/FCL-Team/FoldCraftLauncher/releases/latest");
+            AndroidUtils.openLink(getContext(),"https://github.com/NX-developer/NX-launcher/releases/latest");
             return true;
         });
 
@@ -122,13 +122,13 @@ public class UpdateDialog extends FCLDialog implements View.OnClickListener {
             dialog.setTitle(getContext().getString(R.string.update_launcher));
             Schedulers.androidUIThread().execute(() -> {
                 TaskExecutor executor = Task.composeAsync(() -> {
-                    FileDownloadTask task = new FileDownloadTask(NetworkUtils.toURL(getTargetArchUrl()), new File(FCLPath.CACHE_DIR, "FoldCraftLauncher.apk"));
-                    task.setName("FoldCraftLauncher");
+                    FileDownloadTask task = new FileDownloadTask(NetworkUtils.toURL(getTargetArchUrl()), new File(FCLPath.CACHE_DIR, "NX-Launcher.apk"));
+                    task.setName("NX-Launcher");
                     return task.whenComplete(Schedulers.androidUIThread(), exception -> {
                         if (exception == null) {
                             Intent intent = new Intent(Intent.ACTION_VIEW);
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            Uri apkUri = FileProvider.getUriForFile(getContext(), getContext().getString(com.tungsten.fcllibrary.R.string.file_browser_provider), new File(FCLPath.CACHE_DIR, "FoldCraftLauncher.apk"));
+                            Uri apkUri = FileProvider.getUriForFile(getContext(), getContext().getString(com.tungsten.fcllibrary.R.string.file_browser_provider), new File(FCLPath.CACHE_DIR, "NX-Launcher.apk"));
                             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                             intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
                             getContext().startActivity(intent);
@@ -162,23 +162,6 @@ public class UpdateDialog extends FCLDialog implements View.OnClickListener {
 
     @NonNull
     private String getTargetArchUrl() {
-        String url = version.getUrl();
-        String arch = "all";
-        switch (Architecture.getDeviceArchitecture()) {
-            case Architecture.ARCH_ARM:
-                arch = "armeabi-v7a";
-                break;
-            case Architecture.ARCH_ARM64:
-                arch = "arm64-v8a";
-                break;
-            case Architecture.ARCH_X86:
-                arch = "x86";
-                break;
-            case Architecture.ARCH_X86_64:
-                arch = "x86_64";
-                break;
-        }
-        url = url.replace("-all", "-" + arch);
-        return url;
+        return version.getUrl();
     }
 }
