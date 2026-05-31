@@ -19,7 +19,6 @@ import com.mio.util.showErrorDialog
 import com.mio.util.showItemSelectionDialog
 import com.tungsten.fcl.R
 import com.tungsten.fclauncher.plugins.DriverPlugin
-import java.io.File
 import com.tungsten.fcl.activity.MainActivity.Companion.getInstance
 import com.tungsten.fcl.control.SelectControllerDialog
 import com.tungsten.fcl.databinding.PageVersionSettingBinding
