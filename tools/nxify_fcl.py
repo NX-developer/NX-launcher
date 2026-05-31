@@ -401,6 +401,72 @@ DRIVER_STRINGS = ('    <string name="settings_driver_local_so">Local .so file</s
                   '    <string name="settings_driver_local_fail">Failed to import driver</string>\n')
 
 
+DRIVER_DIALOG = "FCL/src/main/java/com/mio/ui/dialog/DriverSelectDialog.kt"
+
+DIALOG_IMPORTS_OLD = "import java.util.function.Consumer"
+
+DIALOG_IMPORTS_NEW = """import java.util.function.Consumer
+import android.app.Activity
+import android.content.Intent
+import android.widget.Toast
+import com.tungsten.fcl.activity.MainActivity.Companion.getInstance
+import com.tungsten.fcl.util.RequestCodes
+import com.tungsten.fcllibrary.browser.FileBrowser
+import com.tungsten.fcllibrary.browser.options.LibMode
+import com.tungsten.fcllibrary.browser.options.SelectionMode
+import java.io.File"""
+
+DIALOG_LIST_OLD = """        binding.listView.adapter =
+            ArrayAdapter(context, R.layout.item_renderer, mutableListOf<String>().apply {
+                DriverPlugin.driverList.forEach {
+                    add(it.driver)
+                }
+            })
+        binding.listView.setOnItemClickListener { _, _, position, _ ->
+            val versionSetting =
+                if (isGlobal) Profiles.getSelectedProfile().global else Profiles.getSelectedProfile().versionSetting
+            versionSetting.driver = DriverPlugin.driverList[position].driver
+            DriverPlugin.selected = DriverPlugin.driverList[position]
+            dismiss()
+            callback.accept(binding.listView.adapter.getItem(position).toString())
+        }"""
+
+DIALOG_LIST_NEW = """        binding.listView.adapter =
+            ArrayAdapter(context, R.layout.item_renderer, mutableListOf<String>().apply {
+                DriverPlugin.driverList.forEach {
+                    add(it.driver)
+                }
+                add(context.getString(R.string.settings_driver_local_so))
+            })
+        binding.listView.setOnItemClickListener { _, _, position, _ ->
+            if (position >= DriverPlugin.driverList.size) {
+                dismiss()
+                val builder = FileBrowser.Builder(context)
+                val suffix = ArrayList<String?>()
+                suffix.add(".so")
+                builder.setLibMode(LibMode.FILE_CHOOSER)
+                builder.setSelectionMode(SelectionMode.SINGLE_SELECTION)
+                builder.setSuffix(suffix)
+                builder.create().browse(getInstance(), RequestCodes.SELECT_VERSION_ICON_CODE) { _: Int, resultCode: Int, data: Intent? ->
+                    if (resultCode == Activity.RESULT_OK && data != null) {
+                        if (FileBrowser.getSelectedFiles(data).isEmpty()) return@browse
+                        val path = FileBrowser.getSelectedFiles(data)[0]
+                        val message = if (DriverPlugin.importCustomDriver(context, File(path)))
+                            R.string.settings_driver_local_ok else R.string.settings_driver_local_fail
+                        Toast.makeText(context, context.getString(message), Toast.LENGTH_SHORT).show()
+                    }
+                }
+                return@setOnItemClickListener
+            }
+            val versionSetting =
+                if (isGlobal) Profiles.getSelectedProfile().global else Profiles.getSelectedProfile().versionSetting
+            versionSetting.driver = DriverPlugin.driverList[position].driver
+            DriverPlugin.selected = DriverPlugin.driverList[position]
+            dismiss()
+            callback.accept(binding.listView.adapter.getItem(position).toString())
+        }"""
+
+
 def driver_so_import():
     print("[7] Custom .so driver import")
     replace_in(DRIVER_PLUGIN,
@@ -408,11 +474,8 @@ def driver_so_import():
                "import com.tungsten.fclauncher.utils.FCLPath\nimport java.io.File\n",
                "DriverPlugin: import File")
     replace_in(DRIVER_PLUGIN, DRIVER_INIT_OLD, DRIVER_INIT_NEW, "DriverPlugin: importCustomDriver + load")
-    replace_in(VERSION_SETTING,
-               "import com.tungsten.fcl.R\n",
-               "import com.tungsten.fcl.R\nimport com.tungsten.fclauncher.plugins.DriverPlugin\n",
-               "VersionSettingPage: import DriverPlugin")
-    replace_in(VERSION_SETTING, INSTALL_DRIVER_OLD, INSTALL_DRIVER_NEW, "install driver dialog + local .so")
+    replace_in(DRIVER_DIALOG, DIALOG_IMPORTS_OLD, DIALOG_IMPORTS_NEW, "DriverSelectDialog: imports")
+    replace_in(DRIVER_DIALOG, DIALOG_LIST_OLD, DIALOG_LIST_NEW, "DriverSelectDialog: import .so item")
     if "settings_driver_local_so" in open(p(FCL_VALUES), encoding="utf-8").read():
         status(True, "driver .so strings (already present)")
     else:
