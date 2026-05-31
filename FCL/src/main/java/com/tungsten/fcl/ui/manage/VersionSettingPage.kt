@@ -19,9 +19,6 @@ import com.mio.util.showErrorDialog
 import com.mio.util.showItemSelectionDialog
 import com.tungsten.fcl.R
 import com.tungsten.fclauncher.plugins.DriverPlugin
-import com.tungsten.fcllibrary.browser.FileBrowser
-import com.tungsten.fcllibrary.browser.options.LibMode
-import com.tungsten.fcllibrary.browser.options.SelectionMode
 import java.io.File
 import com.tungsten.fcl.activity.MainActivity.Companion.getInstance
 import com.tungsten.fcl.control.SelectControllerDialog
